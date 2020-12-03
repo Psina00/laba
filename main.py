@@ -1,27 +1,56 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import random
 
-Ne = 0
-eps = (input('Введите точность оценки вероятности ошибки декодирования:'))
-const_g = (input('Введите порождающий многочлен:')[::-1])
-l = (input('Введите длину сообщения:'))
-N = 9/4*(int(eps)**2)
-print(N)
+def cutZeroes(x):
+    if (x[len(x) - 1] == 0) & (len(x) > 1):
+        x = x[:-1]
+        return cutZeroes(x)
+    else:
+        return x
 
-for j in range(int(N)):
-    const_r = len(str(const_g)) - 1
+def addZeroes(x, y):
+    if (len(x) < len(y)):
+        x.insert(0, 0)
+        return addZeroes(x, y)
+    else:
+        return x
+
+def subs(el, sub):
+    x = [0 for i in range(len(el))]
+    for i, idx in enumerate(el):
+        x[len(x) - i - 1] = abs(abs(el[len(x) - i - 1]) - abs(sub[len(x) - i - 1]))
+    return x
+
+def mulDivision(el, div):
+    mul = cutZeroes(div)
+    while len(el) >= len(mul):
+        tempDivisor = mul[:]
+        tempDivisor = addZeroes(tempDivisor, el)
+        el = subs(el, tempDivisor)
+        el = cutZeroes(el)
+    return el
+
+Ne = 0
+eps = (input('Введите точность оценки вероятности ошибки декодирования: '))
+const_g = (input('Введите порождающий многочлен: ')[::-1])
+const_r = len(str(const_g)) - 1
+const_g = [int(i) for i in list(str(const_g))]
+l = (input('Введите длину сообщения: '))
+N = 9/4*(int(eps)**2)
+
+def coder():
     var_m = random.getrandbits(int(l))
     var_m = "{0:b}".format(var_m)
-    var_mx = [int(i) for i in list(str(var_m))]
+    var_mx = [int(i) for i in list(str(var_m))][::-1]
     var_k = len(var_mx)
 
     if len(var_mx) < int(l):
         for i in range(int(l) - len(var_mx)):
             var_mx.insert(0, 0)
 
-    var_mx = ''.join(str(x) for x in var_mx)[::-1]
+    var_mx = ''.join(str(x) for x in var_mx)
     var_mx = [int(x) for x in list(str(var_mx))]
-    print('mx = ', var_mx)
 
     if const_r > 1:
         var_xr = [int(i) for i in list(str(10 ** const_r))]
@@ -30,62 +59,48 @@ for j in range(int(N)):
         var_xr = [1]
 
     var_mx_xr = np.polynomial.polynomial.polymul(var_mx, var_xr)
-    z1, var_cx = np.polynomial.polynomial.polydiv(var_mx_xr, [int(i) for i in list(str(const_g))])
+    var_mx_xr = ''.join([str(int(i)) for i in var_mx_xr.tolist()])
+    var_mx_xr = [int(i) for i in list(str(var_mx_xr))]
+    var_cx = mulDivision(var_mx_xr, const_g)
+    var_mx_xr = ''.join([str(x) for x in var_mx_xr])[::-1]
+    var_cx = ''.join([str(x) for x in var_cx])[::-1]
+    var_ax = int(var_mx_xr, 2) + int(var_cx, 2)
 
-    var_cx = abs(var_cx)
-    var_cx = ''.join([str(int(i)) for i in var_cx.tolist()])
-    var_cx = [int(i) for i in list(str(var_cx))]
-
-    for i in range(len(var_cx)):
-        if var_cx[i] > 1:
-            var_cx[i] = 1
-
-    var_ax = np.polynomial.polynomial.polyadd(var_mx_xr, var_cx)
     var_na = var_k + const_r
-    print('cx = ', var_cx)
-    print('ax = ', var_ax)
-    print('n = ', var_na)
+    return[var_ax, var_na]
 
-    vect_e = random.getrandbits(var_na)
-    vect_e = "{0:b}".format(vect_e)
-    vect_e = [int(x) for x in list(str(vect_e))]
-    vect_e = [random.randint(0, 1) for x in vect_e]
-
-    if len(vect_e) < int(var_na):
-        for i in range(int(var_na) - len(vect_e)):
-            vect_e.insert(0, 0)
-
-    for i in range(len(vect_e)):
-        if vect_e[i] == 1:
-            err = vect_e.count(1)
-            p = err / len(vect_e)
-        elif all(i == 0 for i in vect_e):
-            p = 0
-
-    print('e = ', vect_e)
-    print('p = ', p)
+def decoder(var_ax, var_na, ver):
+    vect_e = np.random.default_rng().binomial(1, float(ver), var_na).tolist()
     vect_e = int(''.join(str(x) for x in vect_e), 2)
-    var_ax = ''.join([str(int(i)) for i in var_ax.tolist()])[::-1]
-    var_a = int(''.join(str(i) for i in var_ax), 2)
-    var_b = var_a ^ vect_e
+    var_b = var_ax ^ vect_e
     var_b = "{0:b}".format(var_b)
     var_b = ''.join(var_b)[::-1]
     var_bx = [int(i) for i in list(str(var_b))]
-    print('bx = ', var_bx)
-    z2, var_sx = np.polynomial.polynomial.polydiv(var_bx, [int(i) for i in list(str(const_g))])
-    var_sx = abs(var_sx)
-    var_sx = ''.join([str(int(i)) for i in var_sx.tolist()])[::-1]
-    var_sx = [int(i) for i in list(str(var_sx))]
+    var_sx = mulDivision(var_bx, const_g)
+    return[vect_e, var_sx]
 
-    print('sx = ', var_sx)
+def func(ver, Ne):
+    for j in range(int(N)):
+        cd = coder()
+        dcd = decoder(cd[0], cd[1], ver)
 
-    if all(x == 0 for x in var_sx):
-        var_ERR = 0
-        print('Нет ошибок: 0')
-    else:
-        var_ERR = 1
-        print("Обнаружены ошибки: 1")
+        if all(x == 0 for x in dcd[1]):
+            var_ERR = 0
+        else:
+            var_ERR = 1
 
-    if (vect_e is not None) & (var_ERR == 0):
-        Ne += 1
-print('Вероятность ошибки декодирования = ', Ne/N)
+        if (dcd[0] != 0) & (var_ERR == 0):
+            Ne += 1
+
+    Pe = Ne/N
+    return(Pe)
+
+
+p = [i/100 for i in list(range(100))]
+Pe_arr = []
+for i in range(100):
+    Pe_arr.append(func(p[i], Ne))
+print(Pe_arr)
+
+plt.plot(p, Pe_arr)
+plt.show()
