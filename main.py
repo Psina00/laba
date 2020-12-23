@@ -32,12 +32,13 @@ def mulDivision(el, div):
     return el
 
 Ne = 0
-eps = (input('Введите точность оценки вероятности ошибки декодирования: '))
+eps = float(input('Введите точность оценки вероятности ошибки декодирования: '))
 const_g = (input('Введите порождающий многочлен: ')[::-1])
 const_r = len(str(const_g)) - 1
 const_g = [int(i) for i in list(str(const_g))]
 l = (input('Введите длину сообщения: '))
-N = 9/4*(int(eps)**2)
+N = 9/(4*((eps)**2))
+print(N)
 
 def coder():
     var_m = random.getrandbits(int(l))
@@ -49,17 +50,17 @@ def coder():
         for i in range(int(l) - len(var_mx)):
             var_mx.insert(0, 0)
 
-    var_mx = ''.join(str(x) for x in var_mx)
-    var_mx = [int(x) for x in list(str(var_mx))]
+    var_mx = ''.join([str(x) for x in var_mx])
 
     if const_r > 1:
         var_xr = [int(i) for i in list(str(10 ** const_r))]
         var_xr.reverse()
     else:
         var_xr = [1]
+    var_xr = ''.join([str(x) for x in var_xr])
 
-    var_mx_xr = np.polynomial.polynomial.polymul(var_mx, var_xr)
-    var_mx_xr = ''.join([str(int(i)) for i in var_mx_xr.tolist()])
+    var_mx_xr = int(var_mx, 2) * int(var_xr, 2)
+    var_mx_xr = "{0:b}".format(var_mx_xr)
     var_mx_xr = [int(i) for i in list(str(var_mx_xr))]
     var_cx = mulDivision(var_mx_xr, const_g)
     var_mx_xr = ''.join([str(x) for x in var_mx_xr])[::-1]
